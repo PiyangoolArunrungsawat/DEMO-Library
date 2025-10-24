@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manga Reader Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./vendor/pdf.min.js" defer></script>
+    <script src="./vendor/jszip.min.js" defer></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Manga Reader Demo</h1>
+      <p>
+        Load PDF, CBZ/ZIP archives, or folders of images. Switch between page
+        view and vertical scroll for a reading experience that works on desktop
+        and mobile browsers.
+      </p>
+    </header>
+    <main class="app">
+      <section class="controls">
+        <div class="control-group">
+          <label class="button">
+            <input
+              type="file"
+              id="fileInput"
+              accept=".pdf,.cbz,.zip,image/*"
+              multiple
+            />
+            Select files (PDF / CBZ / images)
+          </label>
+          <label class="button">
+            <input type="file" id="dirInput" webkitdirectory multiple />
+            Load folder of images
+          </label>
+          <div id="dropZone" class="drop-zone" tabindex="0">
+            Drop files or folders here
+          </div>
+        </div>
+        <div class="control-group reading-mode">
+          <span>Reading mode:</span>
+          <label>
+            <input type="radio" name="mode" value="single" checked />
+            Page by page
+          </label>
+          <label>
+            <input type="radio" name="mode" value="vertical" />
+            Vertical scroll
+          </label>
+        </div>
+        <div id="singleControls" class="control-group pager">
+          <button id="prevPage" class="button secondary">Prev</button>
+          <span id="pageIndicator">0 / 0</span>
+          <button id="nextPage" class="button secondary">Next</button>
+        </div>
+        <div id="status" role="status" class="status"></div>
+      </section>
+      <section id="viewer" class="viewer single-mode" tabindex="0"></section>
+    </main>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
