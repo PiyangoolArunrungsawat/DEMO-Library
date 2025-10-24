@@ -18,6 +18,10 @@ const prevButton = document.getElementById("prevPage");
 const nextButton = document.getElementById("nextPage");
 const singleControls = document.getElementById("singleControls");
 const dropZone = document.getElementById("dropZone");
+const bottomPager = document.getElementById("bottomPager");
+const bottomPrev = document.getElementById("bottomPrev");
+const bottomNext = document.getElementById("bottomNext");
+const bottomIndicator = document.getElementById("bottomIndicator");
 
 const workerUrl = new URL("./vendor/pdf.worker.min.js", window.location.href).toString();
 if (window.location.protocol === "file:") {
@@ -29,6 +33,14 @@ if (window.location.protocol === "file:") {
 
 const SUPPORTED_IMAGE = /\.(jpe?g|png|webp|gif)$/i;
 const SUPPORTED_ARCHIVE = /\.(cbz|zip)$/i;
+
+const MIME_LOOKUP = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+};
 
 function setStatus(message, isError = false) {
   statusNode.textContent = message || "";
@@ -54,10 +66,24 @@ function resetState() {
   state.pdfBlob = null;
   state.usingPdfFallback = false;
   state.pdfDocument = null;
+  pageIndicator.textContent = "0 / 0";
+  bottomIndicator.textContent = "0 / 0";
+  prevButton.disabled = true;
+  nextButton.disabled = true;
+  bottomPrev.disabled = true;
+  bottomNext.disabled = true;
 }
 
 function entryName(file) {
   return file.webkitRelativePath || file.fullPath || file.name;
+}
+
+function guessMimeType(filename, fallback = "") {
+  const match = filename.toLowerCase().match(/\.([a-z0-9]+)$/);
+  if (!match) {
+    return fallback;
+  }
+  return MIME_LOOKUP[match[1]] || fallback;
 }
 
 function sortEntries(files) {
@@ -120,7 +146,12 @@ function createImagePageFromZipEntry(entry) {
     async getUrl() {
       if (!objectUrl) {
         const blob = await entry.async("blob");
-        objectUrl = URL.createObjectURL(blob);
+        const desiredType = guessMimeType(entry.name, blob.type);
+        const typedBlob =
+          desiredType && desiredType !== blob.type
+            ? blob.slice(0, blob.size, desiredType)
+            : blob;
+        objectUrl = URL.createObjectURL(typedBlob);
       }
       return objectUrl;
     },
@@ -140,6 +171,7 @@ async function loadImages(files) {
   }
   state.pages = imageFiles.map((file) => createImagePageFromFile(file));
   pageIndicator.textContent = `1 / ${state.pages.length}`;
+  bottomIndicator.textContent = pageIndicator.textContent;
 }
 
 async function loadArchive(file) {
@@ -155,6 +187,7 @@ async function loadArchive(file) {
   );
   state.pages = sortedEntries.map((entry) => createImagePageFromZipEntry(entry));
   pageIndicator.textContent = `1 / ${state.pages.length}`;
+  bottomIndicator.textContent = pageIndicator.textContent;
 }
 
 async function loadPdf(file) {
@@ -163,6 +196,7 @@ async function loadPdf(file) {
     const data = await file.arrayBuffer();
     state.pdfDocument = await pdfjsLib.getDocument({ data }).promise;
     pageIndicator.textContent = `1 / ${state.pdfDocument.numPages}`;
+    bottomIndicator.textContent = pageIndicator.textContent;
     state.cleanupCallbacks.push(() => {
       if (state.pdfDocument?.cleanup) {
         state.pdfDocument.cleanup();
@@ -178,6 +212,11 @@ async function loadPdf(file) {
     }
     state.pdfFallbackUrl = URL.createObjectURL(file);
     pageIndicator.textContent = "PDF preview";
+    bottomIndicator.textContent = "PDF preview";
+    prevButton.disabled = true;
+    nextButton.disabled = true;
+    bottomPrev.disabled = true;
+    bottomNext.disabled = true;
     setStatus("Using built-in PDF viewer fallback.", true);
   }
 }
@@ -207,8 +246,11 @@ async function renderSinglePage() {
     embed.setAttribute("loading", "lazy");
     container.appendChild(embed);
     pageIndicator.textContent = "PDF preview";
+    bottomIndicator.textContent = "PDF preview";
     prevButton.disabled = true;
     nextButton.disabled = true;
+    bottomPrev.disabled = true;
+    bottomNext.disabled = true;
     return;
   }
 
@@ -255,8 +297,11 @@ async function renderVerticalPages() {
     embed.setAttribute("loading", "lazy");
     viewer.appendChild(embed);
     pageIndicator.textContent = "PDF preview";
+    bottomIndicator.textContent = "PDF preview";
     prevButton.disabled = true;
     nextButton.disabled = true;
+    bottomPrev.disabled = true;
+    bottomNext.disabled = true;
     return;
   }
 
@@ -295,19 +340,26 @@ function updatePager() {
   const total = state.pdfDocument?.numPages ?? state.pages.length;
   if (!total) {
     pageIndicator.textContent = "0 / 0";
+    bottomIndicator.textContent = "0 / 0";
     prevButton.disabled = true;
     nextButton.disabled = true;
+    bottomPrev.disabled = true;
+    bottomNext.disabled = true;
     return;
   }
   const current = state.currentIndex + 1;
   pageIndicator.textContent = `${current} / ${total}`;
+  bottomIndicator.textContent = `${current} / ${total}`;
   prevButton.disabled = current <= 1;
   nextButton.disabled = current >= total;
+  bottomPrev.disabled = prevButton.disabled;
+  bottomNext.disabled = nextButton.disabled;
 }
 
 function updateMode(mode) {
   state.mode = mode;
   singleControls.style.display = mode === "single" ? "flex" : "none";
+  bottomPager.style.display = mode === "single" ? "flex" : "none";
   renderCurrentMode().catch((error) => {
     console.error(error);
     setStatus("Could not render pages.", true);
@@ -336,6 +388,8 @@ document.getElementById("dirInput").addEventListener("change", (event) => {
 
 prevButton.addEventListener("click", () => stepPage(-1));
 nextButton.addEventListener("click", () => stepPage(1));
+bottomPrev.addEventListener("click", () => stepPage(-1));
+bottomNext.addEventListener("click", () => stepPage(1));
 
 document.querySelectorAll('input[name="mode"]').forEach((radio) => {
   radio.addEventListener("change", (event) => {

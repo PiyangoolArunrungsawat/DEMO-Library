@@ -58,9 +58,25 @@ body {
   margin-right: 0.5rem;
 }
 
+.pager-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
 .pager {
   gap: 1.5rem;
   align-items: center;
+  justify-content: center;
+}
+
+.bottom-pager {
+  margin-top: 1rem;
+}
+
+.page-indicator,
+#pageIndicator {
+  font-weight: 600;
 }
 
 .viewer {
@@ -167,6 +183,15 @@ body {
 @media (max-width: 720px) {
   .controls {
     gap: 0.5rem;
+  }
+
+  .bottom-pager {
+    position: sticky;
+    bottom: 0;
+    background: rgba(10, 13, 18, 0.9);
+    padding: 0.75rem clamp(1rem, 4vw, 3rem);
+    margin: 0 calc(-1 * clamp(1rem, 4vw, 3rem));
+    backdrop-filter: blur(6px);
   }
 
   .viewer {

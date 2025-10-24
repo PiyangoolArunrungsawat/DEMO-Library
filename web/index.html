@@ -48,14 +48,23 @@
             Vertical scroll
           </label>
         </div>
-        <div id="singleControls" class="control-group pager">
-          <button id="prevPage" class="button secondary">Prev</button>
-          <span id="pageIndicator">0 / 0</span>
-          <button id="nextPage" class="button secondary">Next</button>
+        <div class="pager-wrapper">
+          <div id="singleControls" class="control-group pager">
+            <button id="prevPage" class="button secondary">Prev</button>
+            <span id="pageIndicator">0 / 0</span>
+            <button id="nextPage" class="button secondary">Next</button>
+          </div>
         </div>
         <div id="status" role="status" class="status"></div>
       </section>
       <section id="viewer" class="viewer single-mode" tabindex="0"></section>
+      <div id="bottomPager" class="pager-wrapper bottom-pager">
+        <div class="control-group pager">
+          <button id="bottomPrev" class="button secondary">Prev</button>
+          <span id="bottomIndicator" class="page-indicator">0 / 0</span>
+          <button id="bottomNext" class="button secondary">Next</button>
+        </div>
+      </div>
     </main>
     <script src="./app.js" defer></script>
   </body>

@@ -15,7 +15,7 @@ An experimental manga/comic reader that runs in any modern web browser on deskto
 2. Use the buttons or drag-and-drop to load:
    - A single PDF file
    - A single CBZ/ZIP archive of images
-   - Multiple image files or an entire folder (works best on desktop browsers)
+   - Multiple image files or an entire folder (works best on desktop browsers) — รองรับ `.jpg/.png/.webp/.gif` ทั้งไฟล์เดี่ยวและไฟล์ที่อยู่ใน ZIP/CBZ
 3. Switch between reading modes with the radio buttons or double-click the viewer.
 4. Navigate pages with the on-screen buttons or arrow keys when in single-page mode.
 
