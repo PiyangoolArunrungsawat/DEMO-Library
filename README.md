@@ -21,6 +21,15 @@ An experimental manga/comic reader that runs in any modern web browser on deskto
 
 > Tip: To share or install the reader, serve the `web/` directory with any static file server and add a `manifest.json`/service worker if you want full PWA capabilities.
 
+### เปิดผ่านเว็บเซิร์ฟเวอร์แบบคลิกครั้งเดียว
+
+สคริปต์ทั้งหมดอยู่ในโฟลเดอร์ `scripts/`:
+
+- **Windows** : เปิด `scripts/start_server.bat` (ดับเบิลคลิก). จะเปิดคอนโซล รันเซิร์ฟเวอร์ และเปิดเบราว์เซอร์ให้อัตโนมัติ; ปิดหน้าต่างเพื่อหยุด
+- **macOS** : ดับเบิลคลิก `scripts/start_server.command` (ครั้งแรกอาจต้องคลิกขวา → Open เพื่ออนุญาต)
+- **Linux** : ตั้งค่าให้รันได้ (`chmod +x scripts/start_server.sh`) แล้วดับเบิลคลิก `start_server.sh` เพื่อเปิดในเทอร์มินัล หรือรัน `python3 scripts/start_server.py`
+- ทุกสคริปต์ต้องมี Python 3 ในระบบ และจะเสิร์ฟโฟลเดอร์ `web/` เดียวกันที่ `http://127.0.0.1:<port>/`
+
 ## Roadmap ideas
 
 - Add support for `.cbr` (RAR) archives via an additional decompression library.
