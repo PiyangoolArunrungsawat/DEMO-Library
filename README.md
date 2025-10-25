@@ -16,7 +16,7 @@ An experimental manga/comic reader that runs in any modern web browser on deskto
    - A single PDF file
    - A single CBZ/ZIP archive of images
    - Multiple image files or an entire folder (works best on desktop browsers) — รองรับ `.jpg/.png/.webp/.gif` ทั้งไฟล์เดี่ยวและไฟล์ที่อยู่ใน ZIP/CBZ
-3. เปิดเมนูการตั้งค่าผ่านไอคอนรูปเฟืองเพื่อสลับโหมดการอ่านหรือธีมได้ทุกเมื่อ (ดับเบิลคลิกที่หน้าจอก็สลับโหมดได้)
+3. เปิดเมนูการตั้งค่าผ่านไอคอนรูปเฟืองเพื่อสลับโหมดการอ่าน ปรับธีม หรือกำหนดความสูงของพื้นที่อ่าน (เลือกให้พอดีจอหรือปรับเองได้) — ดับเบิลคลิกที่หน้าจอก็สลับโหมดได้
 4. Navigate pages with the on-screen buttons or arrow keys when in single-page mode.
 
 > Tip: To share or install the reader, serve the `web/` directory with any static file server and add a `manifest.json`/service worker if you want full PWA capabilities.

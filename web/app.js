@@ -9,6 +9,8 @@ const state = {
   pdfFallbackUrl: null,
   usingPdfFallback: false,
   cleanupCallbacks: [],
+  heightMode: "fit",
+  customHeight: 100,
 };
 
 const viewer = document.getElementById("viewer");
@@ -28,11 +30,18 @@ const settingsOverlay = document.getElementById("settingsOverlay");
 const closeSettingsButton = document.getElementById("closeSettings");
 const modeRadios = [...document.querySelectorAll('input[name="mode"]')];
 const themeRadios = [...document.querySelectorAll('input[name="theme"]')];
+const fitToggle = document.getElementById("fitToScreenToggle");
+const heightRange = document.getElementById("heightRange");
+const heightValueLabel = document.getElementById("heightValue");
 const settingsSections = [...document.querySelectorAll(".settings-section")];
 const sectionToggles = settingsSections
   .map((section) => section.querySelector(".settings-section__toggle"))
   .filter(Boolean);
 const THEME_STORAGE_KEY = "mangaReader.theme";
+const HEIGHT_MODE_KEY = "mangaReader.heightMode";
+const HEIGHT_VALUE_KEY = "mangaReader.customHeight";
+const VIEWER_BOTTOM_GAP = 32;
+const MIN_VIEWER_HEIGHT = 320;
 
 let lastFocusedElement = null;
 
@@ -110,6 +119,101 @@ function refreshSettingsOptions() {
   });
 }
 
+function clampHeightValue(value) {
+  const numeric = Number(value);
+  if (Number.isNaN(numeric)) {
+    return 100;
+  }
+  return Math.min(150, Math.max(50, Math.round(numeric)));
+}
+
+function persistHeightSettings() {
+  try {
+    localStorage.setItem(HEIGHT_MODE_KEY, state.heightMode);
+    localStorage.setItem(HEIGHT_VALUE_KEY, String(state.customHeight));
+  } catch (_) {
+    /* ignore storage errors */
+  }
+}
+
+function updateHeightControls() {
+  const isFit = state.heightMode === "fit";
+  if (fitToggle) {
+    fitToggle.checked = isFit;
+  }
+  const fitOptionLabel = fitToggle?.closest(".height-option");
+  if (fitOptionLabel) {
+    fitOptionLabel.classList.toggle("is-active", isFit);
+  }
+  if (heightRange) {
+    heightRange.disabled = isFit;
+    heightRange.value = String(state.customHeight);
+  }
+  if (heightValueLabel) {
+    heightValueLabel.textContent = `${state.customHeight}%`;
+  }
+  document.body.classList.toggle("height-custom-disabled", isFit);
+}
+
+function computeTargetHeight(multiplier) {
+  const rect = viewer.getBoundingClientRect();
+  const targetPx = window.innerHeight * multiplier - rect.top - VIEWER_BOTTOM_GAP;
+  return Math.max(MIN_VIEWER_HEIGHT, targetPx);
+}
+
+function applyViewerHeight() {
+  if (!viewer) {
+    return;
+  }
+  const multiplier = state.heightMode === "custom" ? state.customHeight / 100 : 1;
+  const targetHeight = computeTargetHeight(multiplier);
+  viewer.style.height = `${targetHeight}px`;
+  viewer.style.maxHeight = `${targetHeight}px`;
+}
+
+function setHeightMode(mode, persist = true) {
+  state.heightMode = mode === "custom" ? "custom" : "fit";
+  updateHeightControls();
+  applyViewerHeight();
+  if (persist) {
+    persistHeightSettings();
+  }
+}
+
+function setCustomHeight(value, persist = true) {
+  state.customHeight = clampHeightValue(value);
+  updateHeightControls();
+  if (state.heightMode === "custom") {
+    applyViewerHeight();
+  }
+  if (persist) {
+    persistHeightSettings();
+  }
+}
+
+function initializeHeightSettings() {
+  let savedMode = "fit";
+  let savedHeight = 100;
+  try {
+    const storedMode = localStorage.getItem(HEIGHT_MODE_KEY);
+    const storedHeight = localStorage.getItem(HEIGHT_VALUE_KEY);
+    if (storedMode === "custom" || storedMode === "fit") {
+      savedMode = storedMode;
+    }
+    if (storedHeight) {
+      savedHeight = clampHeightValue(storedHeight);
+    }
+  } catch (_) {
+    savedMode = "fit";
+    savedHeight = 100;
+  }
+  state.customHeight = savedHeight;
+  state.heightMode = savedMode;
+  updateHeightControls();
+  applyViewerHeight();
+}
+
+
 function toggleSection(section) {
   if (!section) {
     return;
@@ -119,9 +223,12 @@ function toggleSection(section) {
   if (!toggle || !body) {
     return;
   }
-  const isOpen = section.classList.toggle("is-open");
+  const isOpen = !section.classList.contains("is-open");
+  section.classList.toggle("is-open", isOpen);
   toggle.setAttribute("aria-expanded", String(isOpen));
+  body.hidden = !isOpen;
   body.setAttribute("aria-hidden", String(!isOpen));
+  // Scrollbar visibility is handled by CSS hover/focus only now.
 }
 
 function openSettingsPanel() {
@@ -178,6 +285,7 @@ function resetState() {
   nextButton.disabled = true;
   bottomPrev.disabled = true;
   bottomNext.disabled = true;
+  applyViewerHeight();
 }
 
 function entryName(file) {
@@ -348,7 +456,7 @@ async function renderSinglePage() {
     embed.src = state.pdfFallbackUrl;
     embed.title = "PDF preview";
     embed.style.width = "100%";
-    embed.style.height = "80vh";
+    embed.style.height = "100%";
     embed.setAttribute("loading", "lazy");
     container.appendChild(embed);
     pageIndicator.textContent = "PDF preview";
@@ -376,6 +484,7 @@ async function renderSinglePage() {
     container.appendChild(img);
   }
   updatePager();
+  applyViewerHeight();
 }
 
 async function renderPdfPageTo(container, pageNumber) {
@@ -399,7 +508,7 @@ async function renderVerticalPages() {
     embed.src = state.pdfFallbackUrl;
     embed.title = "PDF preview";
     embed.style.width = "100%";
-    embed.style.height = "100vh";
+    embed.style.height = "100%";
     embed.setAttribute("loading", "lazy");
     viewer.appendChild(embed);
     pageIndicator.textContent = "PDF preview";
@@ -440,6 +549,7 @@ async function renderVerticalPages() {
     pageIndicator.textContent = `1 / ${state.pages.length}`;
   }
   updatePager();
+  applyViewerHeight();
 }
 
 function updatePager() {
@@ -510,6 +620,21 @@ themeRadios.forEach((radio) => {
   });
 });
 
+if (fitToggle) {
+  fitToggle.addEventListener("change", (event) => {
+    setHeightMode(event.target.checked ? "fit" : "custom");
+  });
+}
+
+if (heightRange) {
+  heightRange.addEventListener("input", (event) => {
+    setCustomHeight(event.target.value, false);
+  });
+  heightRange.addEventListener("change", (event) => {
+    setCustomHeight(event.target.value, true);
+  });
+}
+
 sectionToggles.forEach((toggle) => {
   const section = toggle.closest(".settings-section");
   toggle.addEventListener("click", () => {
@@ -548,6 +673,10 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && settingsPanel.classList.contains("open")) {
     closeSettingsPanel();
   }
+});
+
+window.addEventListener("resize", () => {
+  applyViewerHeight();
 });
 
 function readDirectoryEntries(directoryReader) {
@@ -652,6 +781,7 @@ viewer.addEventListener("dblclick", () => {
 });
 
 initializeTheme();
+initializeHeightSettings();
 setStatus("Ready to load files.");
 updatePager();
 updateMode("single");

@@ -94,7 +94,7 @@
             <span class="settings-section__title">Reading mode</span>
             <span class="settings-section__chevron" aria-hidden="true"></span>
           </button>
-          <div class="settings-section__body" aria-hidden="true">
+          <div class="settings-section__body" aria-hidden="true" hidden>
             <div class="settings-section__body-inner">
               <p class="settings-hint">
                 Switch between single-page navigation and vertical scrolling.
@@ -117,7 +117,7 @@
             <span class="settings-section__title">Theme</span>
             <span class="settings-section__chevron" aria-hidden="true"></span>
           </button>
-          <div class="settings-section__body" aria-hidden="true">
+          <div class="settings-section__body" aria-hidden="true" hidden>
             <div class="settings-section__body-inner">
               <p class="settings-hint">
                 Pick a theme to match your environment.
@@ -135,7 +135,41 @@
             </div>
           </div>
         </section>
-        <section>
+        <section class="settings-section" data-settings-section="height">
+          <button class="settings-section__toggle" type="button" aria-expanded="false">
+            <span class="settings-section__title">Viewer height</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </button>
+          <div class="settings-section__body" aria-hidden="true" hidden>
+            <div class="settings-section__body-inner height-options">
+              <p class="settings-hint">
+                Choose whether the reader should stretch to the viewport or use your own height.
+              </p>
+              <label class="settings-option height-option">
+                <input type="checkbox" id="fitToScreenToggle" checked />
+                <span>
+                  <span class="height-option__label">Match screen height (Fixed)</span>
+                  <span class="height-option__hint">
+                    Keeps the reading area sized to your current window height.
+                  </span>
+                </span>
+              </label>
+              <div class="custom-height">
+                <label for="heightRange">
+                  <span class="height-option__label">Custom</span>
+                  <span class="height-option__hint">
+                    Adjust the maximum viewer height (50% – 150% of viewport).
+                  </span>
+                </label>
+                <div class="custom-height__control">
+                  <input type="range" id="heightRange" min="50" max="150" value="100" />
+                  <span id="heightValue" class="custom-height__value">100%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="settings-section settings-section--static coming-soon">
           <div class="settings-section__static">
             <h3>More options soon</h3>
             <p class="settings-hint">
