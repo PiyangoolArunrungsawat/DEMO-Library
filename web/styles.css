@@ -182,6 +182,7 @@ body.theme-light {
   align-content: flex-start;
   outline: none;
   transition: background 0.3s ease, border-color 0.3s ease;
+  --vertical-gap: clamp(1.5rem, 2vw, 2.5rem);
 }
 
 .viewer.single-mode {
@@ -189,7 +190,40 @@ body.theme-light {
 }
 
 .viewer.vertical-mode {
-  gap: clamp(1.5rem, 2vw, 2.5rem);
+  gap: var(--vertical-gap);
+}
+
+.page-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.viewer.vertical-mode.compact-vertical {
+  --vertical-gap: 0;
+}
+
+.viewer.vertical-mode.compact-vertical .page-shell {
+  gap: 0;
+}
+
+.viewer.vertical-mode.compact-vertical .page-indicator-tag {
+  display: none;
+}
+
+.page-indicator-tag {
+  font-size: 0.85rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+body.theme-light .page-indicator-tag {
+  background: rgba(15, 23, 42, 0.08);
 }
 
 .viewer .placeholder {
@@ -206,7 +240,6 @@ body.theme-light {
   width: auto;
   max-width: 100%;
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
-  border-radius: 10px;
   background: var(--viewer-card-bg);
 }
 
@@ -360,6 +393,26 @@ body.theme-light {
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.25s ease;
 }
 
+.settings-section.hidden-section {
+  display: none !important;
+}
+
+.settings-section--sub {
+  border-color: rgba(107, 164, 255, 0.35);
+  background: rgba(107, 164, 255, 0.12);
+}
+
+.settings-section--sub .settings-section__title {
+  font-size: 0.95rem;
+  color: rgba(195, 221, 255, 0.85);
+  letter-spacing: 0.04em;
+}
+
+body.theme-light .settings-section--sub {
+  border-color: rgba(59, 130, 246, 0.38);
+  background: rgba(59, 130, 246, 0.16);
+}
+
 .settings-section.is-open {
   border-color: var(--accent);
   box-shadow: 0 20px 30px rgba(0, 0, 0, 0.18);
@@ -377,6 +430,8 @@ body.theme-light .settings-section.is-open {
 .settings-section--static {
   padding: 0.95rem 1.1rem 1.1rem;
   display: block;
+  border: none;
+  background: transparent;
 }
 
 .settings-section--static h3 {

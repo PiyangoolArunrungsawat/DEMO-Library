@@ -11,6 +11,7 @@ const state = {
   cleanupCallbacks: [],
   heightMode: "fit",
   customHeight: 100,
+  showVerticalSpacing: true,
 };
 
 const viewer = document.getElementById("viewer");
@@ -33,6 +34,10 @@ const themeRadios = [...document.querySelectorAll('input[name="theme"]')];
 const fitToggle = document.getElementById("fitToScreenToggle");
 const heightRange = document.getElementById("heightRange");
 const heightValueLabel = document.getElementById("heightValue");
+const verticalSpacingToggle = document.getElementById("verticalSpacingToggle");
+const verticalSpacingSection = document.querySelector(
+  '[data-settings-section="vertical-spacing"]'
+);
 const settingsSections = [...document.querySelectorAll(".settings-section")];
 const sectionToggles = settingsSections
   .map((section) => section.querySelector(".settings-section__toggle"))
@@ -211,6 +216,35 @@ function initializeHeightSettings() {
   state.heightMode = savedMode;
   updateHeightControls();
   applyViewerHeight();
+}
+
+function applyVerticalSpacing() {
+  const shouldCompact = state.mode === "vertical" && !state.showVerticalSpacing;
+  viewer.classList.toggle("compact-vertical", shouldCompact);
+}
+
+function updateVerticalSpacingUI() {
+  if (verticalSpacingToggle) {
+    verticalSpacingToggle.checked = state.showVerticalSpacing;
+  }
+  if (verticalSpacingSection) {
+    const isVertical = state.mode === "vertical";
+    verticalSpacingSection.hidden = !isVertical;
+    verticalSpacingSection.classList.toggle("hidden-section", !isVertical);
+    verticalSpacingSection.setAttribute("aria-hidden", String(!isVertical));
+    if (!isVertical) {
+      verticalSpacingSection.classList.remove("is-open");
+      const body = verticalSpacingSection.querySelector(".settings-section__body");
+      const toggle = verticalSpacingSection.querySelector(".settings-section__toggle");
+      if (body) {
+        body.hidden = true;
+        body.setAttribute("aria-hidden", "true");
+      }
+      if (toggle) {
+        toggle.setAttribute("aria-expanded", "false");
+      }
+    }
+  }
 }
 
 
@@ -450,6 +484,7 @@ async function renderSinglePage() {
   const container = document.createElement("div");
   container.className = "page-wrapper";
   viewer.appendChild(container);
+  applyVerticalSpacing();
 
   if (state.usingPdfFallback && state.pdfFallbackUrl) {
     const embed = document.createElement("iframe");
@@ -498,10 +533,18 @@ async function renderPdfPageTo(container, pageNumber) {
   await page.render({ canvasContext: context, viewport }).promise;
 }
 
+function createPageIndicator(tagNumber, total) {
+  const indicator = document.createElement("div");
+  indicator.className = "page-indicator-tag";
+  indicator.textContent = `${tagNumber}/${total}`;
+  return indicator;
+}
+
 async function renderVerticalPages() {
   viewer.classList.remove("single-mode");
   viewer.classList.add("vertical-mode");
   viewer.innerHTML = "";
+  applyVerticalSpacing();
 
   if (state.usingPdfFallback && state.pdfFallbackUrl) {
     const embed = document.createElement("iframe");
@@ -536,17 +579,23 @@ async function renderVerticalPages() {
       // Render sequentially to keep UI responsive.
       // eslint-disable-next-line no-await-in-loop
       await renderPdfPageTo(pageShell, i);
+      pageShell.appendChild(createPageIndicator(i, total));
     }
     pageIndicator.textContent = `1 / ${total}`;
   } else if (state.pages.length) {
-    for (let i = 0; i < state.pages.length; i += 1) {
+    const total = state.pages.length;
+    for (let i = 0; i < total; i += 1) {
+      const pageShell = document.createElement("div");
+      pageShell.className = "page-shell";
+      viewer.appendChild(pageShell);
       const img = document.createElement("img");
       img.alt = `Page ${i + 1}`;
       // eslint-disable-next-line no-await-in-loop
       img.src = await state.pages[i].getUrl();
-      viewer.appendChild(img);
+      pageShell.appendChild(img);
+      pageShell.appendChild(createPageIndicator(i + 1, total));
     }
-    pageIndicator.textContent = `1 / ${state.pages.length}`;
+    pageIndicator.textContent = `1 / ${total}`;
   }
   updatePager();
   applyViewerHeight();
@@ -577,6 +626,8 @@ function updateMode(mode) {
   singleControls.style.display = mode === "single" ? "flex" : "none";
   bottomPager.style.display = mode === "single" ? "flex" : "none";
   syncModeRadios(mode);
+  updateVerticalSpacingUI();
+  applyVerticalSpacing();
   renderCurrentMode().catch((error) => {
     console.error(error);
     setStatus("Could not render pages.", true);
@@ -632,6 +683,13 @@ if (heightRange) {
   });
   heightRange.addEventListener("change", (event) => {
     setCustomHeight(event.target.value, true);
+  });
+}
+
+if (verticalSpacingToggle) {
+  verticalSpacingToggle.addEventListener("change", (event) => {
+    state.showVerticalSpacing = event.target.checked;
+    applyVerticalSpacing();
   });
 }
 
@@ -769,14 +827,6 @@ window.addEventListener("unhandledrejection", (event) => {
 dropZone.addEventListener("keydown", (event) => {
   if (event.key === "Enter" || event.key === " ") {
     document.getElementById("fileInput").click();
-  }
-});
-
-viewer.addEventListener("dblclick", () => {
-  if (state.mode === "single") {
-    updateMode("vertical");
-  } else {
-    updateMode("single");
   }
 });
 
