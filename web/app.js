@@ -22,6 +22,19 @@ const bottomPager = document.getElementById("bottomPager");
 const bottomPrev = document.getElementById("bottomPrev");
 const bottomNext = document.getElementById("bottomNext");
 const bottomIndicator = document.getElementById("bottomIndicator");
+const settingsToggle = document.getElementById("settingsToggle");
+const settingsPanel = document.getElementById("settingsPanel");
+const settingsOverlay = document.getElementById("settingsOverlay");
+const closeSettingsButton = document.getElementById("closeSettings");
+const modeRadios = [...document.querySelectorAll('input[name="mode"]')];
+const themeRadios = [...document.querySelectorAll('input[name="theme"]')];
+const settingsSections = [...document.querySelectorAll(".settings-section")];
+const sectionToggles = settingsSections
+  .map((section) => section.querySelector(".settings-section__toggle"))
+  .filter(Boolean);
+const THEME_STORAGE_KEY = "mangaReader.theme";
+
+let lastFocusedElement = null;
 
 const workerUrl = new URL("./vendor/pdf.worker.min.js", window.location.href).toString();
 if (window.location.protocol === "file:") {
@@ -45,6 +58,99 @@ const MIME_LOOKUP = {
 function setStatus(message, isError = false) {
   statusNode.textContent = message || "";
   statusNode.classList.toggle("error", isError);
+}
+
+function applyTheme(theme, persist = true) {
+  const nextTheme = theme === "light" ? "light" : "dark";
+  document.body.classList.remove("theme-light", "theme-dark");
+  document.body.classList.add(`theme-${nextTheme}`);
+  themeRadios.forEach((radio) => {
+    radio.checked = radio.value === nextTheme;
+  });
+  if (persist) {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    } catch (_) {
+      /* ignore storage issues */
+    }
+  }
+  refreshSettingsOptions();
+}
+
+function initializeTheme() {
+  let saved = null;
+  try {
+    saved = localStorage.getItem(THEME_STORAGE_KEY);
+  } catch (_) {
+    saved = null;
+  }
+  if (saved !== "light" && saved !== "dark") {
+    const prefersLight =
+      window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+    saved = prefersLight ? "light" : "dark";
+  }
+  applyTheme(saved, false);
+}
+
+function syncModeRadios(mode) {
+  modeRadios.forEach((radio) => {
+    radio.checked = radio.value === mode;
+  });
+  refreshSettingsOptions();
+}
+
+function refreshSettingsOptions() {
+  document.querySelectorAll(".settings-option").forEach((label) => {
+    const control = label.querySelector('input[type="radio"]');
+    if (control && control.checked) {
+      label.classList.add("is-active");
+    } else {
+      label.classList.remove("is-active");
+    }
+  });
+}
+
+function toggleSection(section) {
+  if (!section) {
+    return;
+  }
+  const toggle = section.querySelector(".settings-section__toggle");
+  const body = section.querySelector(".settings-section__body");
+  if (!toggle || !body) {
+    return;
+  }
+  const isOpen = section.classList.toggle("is-open");
+  toggle.setAttribute("aria-expanded", String(isOpen));
+  body.setAttribute("aria-hidden", String(!isOpen));
+}
+
+function openSettingsPanel() {
+  if (settingsPanel.classList.contains("open")) {
+    return;
+  }
+  lastFocusedElement = document.activeElement;
+  settingsPanel.classList.add("open");
+  settingsOverlay.classList.add("visible");
+  settingsOverlay.hidden = false;
+  settingsToggle.setAttribute("aria-expanded", "true");
+  settingsPanel.setAttribute("aria-hidden", "false");
+  closeSettingsButton.focus();
+}
+
+function closeSettingsPanel() {
+  if (!settingsPanel.classList.contains("open")) {
+    return;
+  }
+  settingsPanel.classList.remove("open");
+  settingsOverlay.classList.remove("visible");
+  settingsOverlay.hidden = true;
+  settingsToggle.setAttribute("aria-expanded", "false");
+  settingsPanel.setAttribute("aria-hidden", "true");
+  if (lastFocusedElement instanceof HTMLElement) {
+    lastFocusedElement.focus();
+  } else {
+    settingsToggle.focus();
+  }
 }
 
 function resetState() {
@@ -360,6 +466,7 @@ function updateMode(mode) {
   state.mode = mode;
   singleControls.style.display = mode === "single" ? "flex" : "none";
   bottomPager.style.display = mode === "single" ? "flex" : "none";
+  syncModeRadios(mode);
   renderCurrentMode().catch((error) => {
     console.error(error);
     setStatus("Could not render pages.", true);
@@ -391,10 +498,39 @@ nextButton.addEventListener("click", () => stepPage(1));
 bottomPrev.addEventListener("click", () => stepPage(-1));
 bottomNext.addEventListener("click", () => stepPage(1));
 
-document.querySelectorAll('input[name="mode"]').forEach((radio) => {
+modeRadios.forEach((radio) => {
   radio.addEventListener("change", (event) => {
     updateMode(event.target.value);
   });
+});
+
+themeRadios.forEach((radio) => {
+  radio.addEventListener("change", (event) => {
+    applyTheme(event.target.value);
+  });
+});
+
+sectionToggles.forEach((toggle) => {
+  const section = toggle.closest(".settings-section");
+  toggle.addEventListener("click", () => {
+    toggleSection(section);
+  });
+});
+
+settingsToggle.addEventListener("click", () => {
+  if (settingsPanel.classList.contains("open")) {
+    closeSettingsPanel();
+  } else {
+    openSettingsPanel();
+  }
+});
+
+closeSettingsButton.addEventListener("click", () => {
+  closeSettingsPanel();
+});
+
+settingsOverlay.addEventListener("click", () => {
+  closeSettingsPanel();
 });
 
 document.addEventListener("keydown", (event) => {
@@ -405,6 +541,12 @@ document.addEventListener("keydown", (event) => {
     stepPage(1);
   } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
     stepPage(-1);
+  }
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && settingsPanel.classList.contains("open")) {
+    closeSettingsPanel();
   }
 });
 
@@ -504,13 +646,12 @@ dropZone.addEventListener("keydown", (event) => {
 viewer.addEventListener("dblclick", () => {
   if (state.mode === "single") {
     updateMode("vertical");
-    document.querySelector('input[name="mode"][value="vertical"]').checked = true;
   } else {
     updateMode("single");
-    document.querySelector('input[name="mode"][value="single"]').checked = true;
   }
 });
 
+initializeTheme();
 setStatus("Ready to load files.");
 updatePager();
 updateMode("single");

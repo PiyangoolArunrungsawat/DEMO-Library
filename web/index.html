@@ -8,9 +8,29 @@
     <script src="./vendor/pdf.min.js" defer></script>
     <script src="./vendor/jszip.min.js" defer></script>
   </head>
-  <body>
+  <body class="theme-dark">
     <header class="app-header">
       <h1>Manga Reader Demo</h1>
+      <button
+        id="settingsToggle"
+        class="settings-trigger"
+        type="button"
+        aria-expanded="false"
+        aria-controls="settingsPanel"
+      >
+        <span class="sr-only">Open reading settings</span>
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          focusable="false"
+          class="settings-trigger__icon"
+        >
+          <path
+            d="M11 3h2l.4 2.1c.6.2 1.2.5 1.7.9l2-1 1.4 1.4-1 2c.4.5.7 1.1.9 1.7L21 11v2l-2.1.4c-.2.6-.5 1.2-.9 1.7l1 2-1.4 1.4-2-1c-.5.4-1.1.7-1.7.9L13 21h-2l-.4-2.1c-.6-.2-1.2-.5-1.7-.9l-2 1-1.4-1.4 1-2c-.4-.5-.7-1.1-.9-1.7L3 13v-2l2.1-.4c.2-.6.5-1.2.9-1.7l-1-2L6.4 5l2 1c.5-.4 1.1-.7 1.7-.9L11 3Zm1 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"
+            fill="currentColor"
+          />
+        </svg>
+      </button>
       <p>
         Load PDF, CBZ/ZIP archives, or folders of images. Switch between page
         view and vertical scroll for a reading experience that works on desktop
@@ -37,17 +57,6 @@
             Drop files or folders here
           </div>
         </div>
-        <div class="control-group reading-mode">
-          <span>Reading mode:</span>
-          <label>
-            <input type="radio" name="mode" value="single" checked />
-            Page by page
-          </label>
-          <label>
-            <input type="radio" name="mode" value="vertical" />
-            Vertical scroll
-          </label>
-        </div>
         <div class="pager-wrapper">
           <div id="singleControls" class="control-group pager">
             <button id="prevPage" class="button secondary">Prev</button>
@@ -66,6 +75,76 @@
         </div>
       </div>
     </main>
+    <div id="settingsOverlay" class="settings-overlay" hidden></div>
+    <aside
+      id="settingsPanel"
+      class="settings-panel"
+      aria-hidden="true"
+      aria-labelledby="settingsTitle"
+    >
+      <div class="settings-panel__header">
+        <h2 id="settingsTitle">Reading Settings</h2>
+        <button id="closeSettings" class="button tertiary" type="button">
+          Close
+        </button>
+      </div>
+      <div class="settings-panel__content">
+        <section class="settings-section" data-settings-section="mode">
+          <button class="settings-section__toggle" type="button" aria-expanded="false">
+            <span class="settings-section__title">Reading mode</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </button>
+          <div class="settings-section__body" aria-hidden="true">
+            <div class="settings-section__body-inner">
+              <p class="settings-hint">
+                Switch between single-page navigation and vertical scrolling.
+              </p>
+              <div class="settings-options">
+                <label class="settings-option">
+                  <input type="radio" name="mode" value="single" checked />
+                  <span>Page by page</span>
+                </label>
+                <label class="settings-option">
+                  <input type="radio" name="mode" value="vertical" />
+                  <span>Vertical scroll</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="settings-section" data-settings-section="theme">
+          <button class="settings-section__toggle" type="button" aria-expanded="false">
+            <span class="settings-section__title">Theme</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </button>
+          <div class="settings-section__body" aria-hidden="true">
+            <div class="settings-section__body-inner">
+              <p class="settings-hint">
+                Pick a theme to match your environment.
+              </p>
+              <div class="settings-options">
+                <label class="settings-option">
+                  <input type="radio" name="theme" value="dark" checked />
+                  <span>Dark</span>
+                </label>
+                <label class="settings-option">
+                  <input type="radio" name="theme" value="light" />
+                  <span>Light</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section>
+          <div class="settings-section__static">
+            <h3>More options soon</h3>
+            <p class="settings-hint">
+              Additional reader preferences will live here in future updates.
+            </p>
+          </div>
+        </section>
+      </div>
+    </aside>
     <script src="./app.js" defer></script>
   </body>
 </html>
