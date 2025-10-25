@@ -1,0 +1,67 @@
+name: Auto Tag
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-tag-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine next tag
+        id: bump
+        shell: bash
+        run: |
+          set -eo pipefail
+          git fetch --tags
+
+          prefix="v"
+          default="${prefix}0.0.1"
+
+          latest="$(git tag --list "${prefix}*" --sort=-v:refname | head -n 1)"
+
+          if [ -z "$latest" ]; then
+            next="$default"
+          else
+            version="${latest#$prefix}"
+            IFS='.' read -r major minor patch <<< "$version"
+
+            major=${major:-0}
+            minor=${minor:-0}
+            patch=${patch:-0}
+
+            while :
+            do
+              patch=$((patch + 1))
+              candidate="${prefix}${major}.${minor}.${patch}"
+
+              if ! git rev-parse "$candidate" >/dev/null 2>&1 && \
+                 ! git ls-remote --tags origin "$candidate" | grep -q "$candidate"; then
+                next="$candidate"
+                break
+              fi
+            done
+          fi
+
+          echo "tag=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Push new tag
+        env:
+          TAG_NAME: ${{ steps.bump.outputs.tag }}
+        run: |
+          git tag "$TAG_NAME" "${GITHUB_SHA}"
+          git push origin "$TAG_NAME"
