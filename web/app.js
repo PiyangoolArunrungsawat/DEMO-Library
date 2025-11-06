@@ -9,8 +9,6 @@ const state = {
   pdfFallbackUrl: null,
   usingPdfFallback: false,
   cleanupCallbacks: [],
-  heightMode: "fit",
-  customHeight: 100,
   showVerticalSpacing: true,
   language: "en",
 };
@@ -33,9 +31,6 @@ const closeSettingsButton = document.getElementById("closeSettings");
 const modeRadios = [...document.querySelectorAll('input[name="mode"]')];
 const themeRadios = [...document.querySelectorAll('input[name="theme"]')];
 const languageRadios = [...document.querySelectorAll('input[name="language"]')];
-const fitToggle = document.getElementById("fitToScreenToggle");
-const heightRange = document.getElementById("heightRange");
-const heightValueLabel = document.getElementById("heightValue");
 const verticalSpacingToggle = document.getElementById("verticalSpacingToggle");
 const verticalSpacingSection = document.querySelector(
   '[data-settings-section="vertical-spacing"]'
@@ -45,11 +40,7 @@ const sectionToggles = settingsSections
   .map((section) => section.querySelector(".settings-section__toggle"))
   .filter(Boolean);
 const THEME_STORAGE_KEY = "mangaReader.theme";
-const HEIGHT_MODE_KEY = "mangaReader.heightMode";
-const HEIGHT_VALUE_KEY = "mangaReader.customHeight";
 const LANGUAGE_STORAGE_KEY = "mangaReader.language";
-const VIEWER_BOTTOM_GAP = 32;
-const MIN_VIEWER_HEIGHT = 320;
 
 let lastFocusedElement = null;
 
@@ -73,8 +64,11 @@ const MIME_LOOKUP = {
 };
 
 function setStatus(message, isError = false) {
-  statusNode.textContent = message || "";
+  const readyText = translations[state.language]?.readyStatus || translations.en.readyStatus;
+  const finalMessage = message || readyText;
+  statusNode.textContent = finalMessage;
   statusNode.classList.toggle("error", isError);
+  statusNode.dataset.defaultStatus = finalMessage === readyText && !isError ? "true" : "false";
 }
 
 function applyTheme(theme, persist = true) {
@@ -100,23 +94,121 @@ const translations = {
     selectFiles: "Select files (PDF / CBZ / images)",
     loadFolder: "Load folder of images",
     readyStatus: "Ready to load files.",
+    prev: "Prev",
+    next: "Next",
+    statusLoading: "Loading files…",
+    statusLoadError: "Could not load files.",
+    statusLoaded: "Loaded {{count}} pages.",
+    statusPdfFallback: "Using built-in PDF viewer fallback.",
+    statusRenderError: "Could not render pages.",
+    statusDropError: "Could not read dropped items.",
+    statusError: "Error: {{message}}",
+    singlePlaceholder: "Select files or drop them here to start reading.",
+    verticalPlaceholder: "Load a PDF, CBZ, ZIP, or images to display pages here.",
+    ui: {
+      titles: {
+        readingMode: "Reading mode",
+        language: "Language",
+        verticalLayout: "Vertical layout",
+        theme: "Theme",
+      },
+      hints: {
+        readingMode: "Switch between single-page navigation and vertical scrolling.",
+        language: "Choose the interface language for menus and labels.",
+        verticalLayout: "Control spacing between pages while reading in vertical scroll mode.",
+        showSpacing: "Leave breathing room between pages and keep the page indicators visible.",
+        theme: "Pick a theme to match your environment.",
+      },
+      options: {
+        pageByPage: "Page by page",
+        verticalScroll: "Vertical scroll",
+        languageEnglish: "English",
+        languageThai: "ไทย",
+        showSpacing: "Show spacing & page numbers",
+        themeDark: "Dark",
+        themeLight: "Light",
+      },
+    },
   },
   th: {
     loadPanelText: "ลากและวางไฟล์หรือโฟลเดอร์ที่นี่",
     selectFiles: "เลือกไฟล์ (PDF / CBZ / รูปภาพ)",
     loadFolder: "โหลดโฟลเดอร์รูปภาพ",
     readyStatus: "พร้อมสำหรับการโหลดไฟล์",
+    prev: "ก่อนหน้า",
+    next: "ถัดไป",
+    statusLoading: "กำลังโหลดไฟล์…",
+    statusLoadError: "ไม่สามารถโหลดไฟล์ได้",
+    statusLoaded: "โหลดหน้าสำเร็จ {{count}} หน้า",
+    statusPdfFallback: "ใช้งานตัวอ่าน PDF สำรอง",
+    statusRenderError: "ไม่สามารถแสดงหน้าได้",
+    statusDropError: "ไม่สามารถอ่านไฟล์ที่ลากมาได้",
+    statusError: "เกิดข้อผิดพลาด: {{message}}",
+    singlePlaceholder: "เลือกไฟล์หรือวางไฟล์เพื่อเริ่มอ่าน",
+    verticalPlaceholder: "โหลด PDF, CBZ, ZIP หรือรูปภาพเพื่อแสดงหน้าอ่านที่นี่",
+    ui: {
+      titles: {
+        readingMode: "โหมดการอ่าน",
+        language: "ภาษา",
+        verticalLayout: "การจัดหน้าแนวตั้ง",
+        theme: "ธีม",
+      },
+      hints: {
+        readingMode: "สลับระหว่างอ่านทีละหน้าหรือเลื่อนต่อเนื่องแนวตั้ง",
+        language: "เลือกภาษาสำหรับเมนูและป้ายกำกับต่างๆ",
+        verticalLayout: "ตั้งค่าช่องว่างระหว่างหน้าขณะอ่านแบบเลื่อนแนวตั้ง",
+        showSpacing: "เว้นพื้นที่ระหว่างหน้าและแสดงหมายเลขหน้า",
+        theme: "เลือกธีมให้เหมาะกับสภาพแวดล้อม",
+      },
+      options: {
+        pageByPage: "อ่านทีละหน้า",
+        verticalScroll: "เลื่อนแนวตั้ง",
+        languageEnglish: "English",
+        languageThai: "ไทย",
+        showSpacing: "แสดงช่องว่างและหมายเลขหน้า",
+        themeDark: "โหมดมืด",
+        themeLight: "โหมดสว่าง",
+      },
+    },
   },
 };
+
+function formatStatus(key, params = {}) {
+  const langPack = translations[state.language] || translations.en;
+  const fallbackPack = translations.en;
+  let template = langPack[key] || fallbackPack[key] || "";
+  if (typeof template !== "string") {
+    return String(template);
+  }
+  return template.replace(/{{\s*(\w+)\s*}}/g, (_, token) =>
+    params[token] !== undefined ? params[token] : ""
+  );
+}
+
+function resolveI18n(key) {
+  const path = key.split(".");
+  const read = (pack) =>
+    path.reduce((acc, part) => (acc && acc[part] !== undefined ? acc[part] : undefined), pack);
+  const langPack = translations[state.language] || translations.en;
+  return read(langPack) ?? read(translations.en) ?? key;
+}
 
 function applyLanguage(language, persist = true) {
   const choice = translations[language] ? language : "en";
   state.language = choice;
   const copy = translations[choice];
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const text = resolveI18n(node.dataset.i18n);
+    if (typeof text === "string") {
+      node.textContent = text;
+    }
+  });
   const drop = document.getElementById("dropZone");
   const selectLabel = document.querySelector("label[for='fileInput'] span");
   const folderLabel = document.querySelector("label[for='dirInput'] span");
   const statusEl = document.getElementById("status");
+  const prevButtons = [prevButton, bottomPrev];
+  const nextButtons = [nextButton, bottomNext];
   if (drop) {
     drop.textContent = copy.loadPanelText;
   }
@@ -126,9 +218,17 @@ function applyLanguage(language, persist = true) {
   if (folderLabel) {
     folderLabel.textContent = copy.loadFolder;
   }
-  if (statusEl && !statusEl.textContent) {
-    statusEl.textContent = copy.readyStatus;
+  if (statusEl && (statusEl.dataset.defaultStatus === "true" || !statusEl.textContent)) {
+    setStatus(copy.readyStatus);
   }
+  prevButtons.forEach((btn) => btn && (btn.textContent = copy.prev));
+  nextButtons.forEach((btn) => btn && (btn.textContent = copy.next));
+  document.querySelectorAll(".placeholder-single").forEach((node) => {
+    node.textContent = copy.singlePlaceholder;
+  });
+  document.querySelectorAll(".placeholder-vertical").forEach((node) => {
+    node.textContent = copy.verticalPlaceholder;
+  });
   languageRadios.forEach((radio) => {
     radio.checked = radio.value === choice;
   });
@@ -185,100 +285,6 @@ function refreshSettingsOptions() {
       label.classList.remove("is-active");
     }
   });
-}
-
-function clampHeightValue(value) {
-  const numeric = Number(value);
-  if (Number.isNaN(numeric)) {
-    return 100;
-  }
-  return Math.min(150, Math.max(50, Math.round(numeric)));
-}
-
-function persistHeightSettings() {
-  try {
-    localStorage.setItem(HEIGHT_MODE_KEY, state.heightMode);
-    localStorage.setItem(HEIGHT_VALUE_KEY, String(state.customHeight));
-  } catch (_) {
-    /* ignore storage errors */
-  }
-}
-
-function updateHeightControls() {
-  const isFit = state.heightMode === "fit";
-  if (fitToggle) {
-    fitToggle.checked = isFit;
-  }
-  const fitOptionLabel = fitToggle?.closest(".height-option");
-  if (fitOptionLabel) {
-    fitOptionLabel.classList.toggle("is-active", isFit);
-  }
-  if (heightRange) {
-    heightRange.disabled = isFit;
-    heightRange.value = String(state.customHeight);
-  }
-  if (heightValueLabel) {
-    heightValueLabel.textContent = `${state.customHeight}%`;
-  }
-  document.body.classList.toggle("height-custom-disabled", isFit);
-}
-
-function computeTargetHeight(multiplier) {
-  const rect = viewer.getBoundingClientRect();
-  const targetPx = window.innerHeight * multiplier - rect.top - VIEWER_BOTTOM_GAP;
-  return Math.max(MIN_VIEWER_HEIGHT, targetPx);
-}
-
-function applyViewerHeight() {
-  if (!viewer) {
-    return;
-  }
-  const multiplier = state.heightMode === "custom" ? state.customHeight / 100 : 1;
-  const targetHeight = computeTargetHeight(multiplier);
-  viewer.style.height = `${targetHeight}px`;
-  viewer.style.maxHeight = `${targetHeight}px`;
-}
-
-function setHeightMode(mode, persist = true) {
-  state.heightMode = mode === "custom" ? "custom" : "fit";
-  updateHeightControls();
-  applyViewerHeight();
-  if (persist) {
-    persistHeightSettings();
-  }
-}
-
-function setCustomHeight(value, persist = true) {
-  state.customHeight = clampHeightValue(value);
-  updateHeightControls();
-  if (state.heightMode === "custom") {
-    applyViewerHeight();
-  }
-  if (persist) {
-    persistHeightSettings();
-  }
-}
-
-function initializeHeightSettings() {
-  let savedMode = "fit";
-  let savedHeight = 100;
-  try {
-    const storedMode = localStorage.getItem(HEIGHT_MODE_KEY);
-    const storedHeight = localStorage.getItem(HEIGHT_VALUE_KEY);
-    if (storedMode === "custom" || storedMode === "fit") {
-      savedMode = storedMode;
-    }
-    if (storedHeight) {
-      savedHeight = clampHeightValue(storedHeight);
-    }
-  } catch (_) {
-    savedMode = "fit";
-    savedHeight = 100;
-  }
-  state.customHeight = savedHeight;
-  state.heightMode = savedMode;
-  updateHeightControls();
-  applyViewerHeight();
 }
 
 function applyVerticalSpacing() {
@@ -382,7 +388,6 @@ function resetState() {
   nextButton.disabled = true;
   bottomPrev.disabled = true;
   bottomNext.disabled = true;
-  applyViewerHeight();
 }
 
 function entryName(file) {
@@ -407,7 +412,7 @@ async function handleInputFiles(fileList) {
   if (!fileList || fileList.length === 0) {
     return;
   }
-  setStatus("Loading files…");
+  setStatus(formatStatus("statusLoading"));
   resetState();
 
   const files = [...fileList];
@@ -423,11 +428,12 @@ async function handleInputFiles(fileList) {
   } catch (error) {
     console.error(error);
     resetState();
-    setStatus(error.message || "Could not load files.", true);
+    setStatus(error?.message || formatStatus("statusLoadError"), true);
     return;
   }
 
-  setStatus(`Loaded ${state.pages.length || state.pdfDocument?.numPages || 0} pages.`);
+  const totalLoaded = state.pages.length || state.pdfDocument?.numPages || 0;
+  setStatus(formatStatus("statusLoaded", { count: totalLoaded }));
   await renderCurrentMode();
 }
 
@@ -528,7 +534,7 @@ async function loadPdf(file) {
     nextButton.disabled = true;
     bottomPrev.disabled = true;
     bottomNext.disabled = true;
-    setStatus("Using built-in PDF viewer fallback.", true);
+    setStatus(formatStatus("statusPdfFallback"), true);
   }
 }
 
@@ -546,6 +552,7 @@ async function renderSinglePage() {
   viewer.innerHTML = "";
   const container = document.createElement("div");
   container.className = "page-wrapper";
+  container.style.width = "100%";
   viewer.appendChild(container);
   applyVerticalSpacing();
 
@@ -568,7 +575,7 @@ async function renderSinglePage() {
 
   const total = state.pdfDocument?.numPages ?? state.pages.length;
   if (!total) {
-    container.innerHTML = `<p class="placeholder">Select files or drop them here to start reading.</p>`;
+    container.innerHTML = `<p class="placeholder placeholder-single">${translations[state.language].singlePlaceholder}</p>`;
     updatePager();
     return;
   }
@@ -582,16 +589,30 @@ async function renderSinglePage() {
     container.appendChild(img);
   }
   updatePager();
-  applyViewerHeight();
 }
 
 async function renderPdfPageTo(container, pageNumber) {
   const page = await state.pdfDocument.getPage(pageNumber);
-  const viewport = page.getViewport({ scale: 1.5 });
+  const baseViewport = page.getViewport({ scale: 1 });
+  const containerRect = container.getBoundingClientRect();
+  const viewerRect = viewer.getBoundingClientRect();
+  const viewerStyles = window.getComputedStyle(viewer);
+  const paddingLeft = parseFloat(viewerStyles.paddingLeft) || 0;
+  const paddingRight = parseFloat(viewerStyles.paddingRight) || 0;
+  const viewerInnerWidth = Math.max(viewer.clientWidth - paddingLeft - paddingRight, 0);
+  const containerWidth = container.clientWidth || containerRect.width;
+  const fallbackWidth = viewerRect.width || viewer.clientWidth || baseViewport.width || 1;
+  const availableWidth = Math.max(containerWidth, viewerInnerWidth, fallbackWidth, 1);
+  const scale = availableWidth / baseViewport.width;
+  const viewport = page.getViewport({ scale });
+  const deviceScale = window.devicePixelRatio || 1;
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
-  canvas.width = viewport.width;
-  canvas.height = viewport.height;
+  canvas.width = Math.floor(viewport.width * deviceScale);
+  canvas.height = Math.floor(viewport.height * deviceScale);
+  canvas.style.width = `${viewport.width}px`;
+  canvas.style.height = `${viewport.height}px`;
+  context.setTransform(deviceScale, 0, 0, deviceScale, 0, 0);
   container.appendChild(canvas);
   await page.render({ canvasContext: context, viewport }).promise;
 }
@@ -628,7 +649,7 @@ async function renderVerticalPages() {
 
   const total = state.pdfDocument?.numPages ?? state.pages.length;
   if (!total) {
-    viewer.innerHTML = `<p class="placeholder">Load a PDF, CBZ, ZIP, or images to display pages here.</p>`;
+    viewer.innerHTML = `<p class="placeholder placeholder-vertical">${translations[state.language].verticalPlaceholder}</p>`;
     updatePager();
     return;
   }
@@ -661,7 +682,6 @@ async function renderVerticalPages() {
     pageIndicator.textContent = `1 / ${total}`;
   }
   updatePager();
-  applyViewerHeight();
 }
 
 function updatePager() {
@@ -693,7 +713,7 @@ function updateMode(mode) {
   applyVerticalSpacing();
   renderCurrentMode().catch((error) => {
     console.error(error);
-    setStatus("Could not render pages.", true);
+    setStatus(formatStatus("statusRenderError"), true);
   });
 }
 
@@ -740,21 +760,6 @@ languageRadios.forEach((radio) => {
   });
 });
 
-if (fitToggle) {
-  fitToggle.addEventListener("change", (event) => {
-    setHeightMode(event.target.checked ? "fit" : "custom");
-  });
-}
-
-if (heightRange) {
-  heightRange.addEventListener("input", (event) => {
-    setCustomHeight(event.target.value, false);
-  });
-  heightRange.addEventListener("change", (event) => {
-    setCustomHeight(event.target.value, true);
-  });
-}
-
 if (verticalSpacingToggle) {
   verticalSpacingToggle.addEventListener("change", (event) => {
     state.showVerticalSpacing = event.target.checked;
@@ -800,10 +805,6 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && settingsPanel.classList.contains("open")) {
     closeSettingsPanel();
   }
-});
-
-window.addEventListener("resize", () => {
-  applyViewerHeight();
 });
 
 function readDirectoryEntries(directoryReader) {
@@ -877,20 +878,20 @@ dropZone.addEventListener("dragleave", () => {
 dropZone.addEventListener("drop", (event) => {
   acceptDrop(event).catch((error) => {
     console.error(error);
-    setStatus("Could not read dropped items.", true);
+    setStatus(formatStatus("statusDropError"), true);
   });
 });
 
 window.addEventListener("error", (event) => {
   if (event && event.message) {
-    setStatus(`Error: ${event.message}`, true);
+    setStatus(formatStatus("statusError", { message: event.message }), true);
   }
 });
 
 window.addEventListener("unhandledrejection", (event) => {
   if (event && event.reason) {
     const message = event.reason.message || String(event.reason);
-    setStatus(`Error: ${message}`, true);
+    setStatus(formatStatus("statusError", { message }), true);
   }
 });
 dropZone.addEventListener("keydown", (event) => {
@@ -901,7 +902,6 @@ dropZone.addEventListener("keydown", (event) => {
 
 initializeTheme();
 initializeLanguage();
-initializeHeightSettings();
-setStatus("Ready to load files.");
+setStatus(translations[state.language].readyStatus);
 updatePager();
 updateMode("single");

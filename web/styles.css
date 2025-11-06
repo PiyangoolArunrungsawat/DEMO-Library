@@ -281,7 +281,7 @@ body.theme-light {
   font-size: 0.85rem;
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  /* background: rgba(255, 255, 255, 0.08); */
   color: var(--text-muted);
   letter-spacing: 0.05em;
 }

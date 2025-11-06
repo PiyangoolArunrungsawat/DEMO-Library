@@ -11,10 +11,12 @@
   <body class="theme-dark">
     <header class="app-header">
       <div class="header-top">
-        <div class="logo-shell">
-          <img src="./image/istockphoto-1127050490-612x612.jpg" alt="Manga Reader logo" />
+        <div class="brand-group">
+          <div class="logo-shell">
+            <img src="./image/istockphoto-1127050490-612x612.jpg" alt="Manga Reader logo" />
+          </div>
+          <h1>Manga Reader Demo</h1>
         </div>
-        <h1>Manga Reader Demo</h1>
         <button
           id="settingsToggle"
           class="settings-trigger"
@@ -36,32 +38,29 @@
           </svg>
         </button>
       </div>
-      <p class="app-tagline">
-        Load PDF, CBZ/ZIP archives, or folders of images. Switch between page
-        view and vertical scroll for a reading experience that works on desktop
-        and mobile browsers.
-      </p>
     </header>
+
     <main class="app">
       <section class="controls">
-        <div class="control-group">
+        <div class="control-group primary-inputs">
           <div id="dropZone" class="drop-zone" tabindex="0">
             Drop files or folders here
           </div>
-          <label class="button full-width">
+          <label class="button full-width" for="fileInput">
             <input
               type="file"
               id="fileInput"
               accept=".pdf,.cbz,.zip,image/*"
               multiple
             />
-            Select files (PDF / CBZ / images)
+            <span>Select files (PDF / CBZ / images)</span>
           </label>
-          <label class="button full-width">
+          <label class="button full-width" for="dirInput">
             <input type="file" id="dirInput" webkitdirectory multiple />
-            Load folder of images
+            <span>Load folder of images</span>
           </label>
         </div>
+
         <div class="pager-wrapper">
           <div id="singleControls" class="control-group pager">
             <button id="prevPage" class="button secondary">Prev</button>
@@ -69,10 +68,13 @@
             <button id="nextPage" class="button secondary">Next</button>
           </div>
         </div>
+
         <div id="status" role="status" class="status"></div>
       </section>
+
       <section id="viewer" class="viewer single-mode" tabindex="0"></section>
-      <div id="bottomPager" class="pager-wrapper bottom-pager">
+
+      <div id="bottomPager" class="pager-wrapper">
         <div class="control-group pager">
           <button id="bottomPrev" class="button secondary">Prev</button>
           <span id="bottomIndicator" class="page-indicator">0 / 0</span>
@@ -80,7 +82,9 @@
         </div>
       </div>
     </main>
+
     <div id="settingsOverlay" class="settings-overlay" hidden></div>
+
     <aside
       id="settingsPanel"
       class="settings-panel"
@@ -89,34 +93,58 @@
     >
       <div class="settings-panel__header">
         <h2 id="settingsTitle">Reading Settings</h2>
-        <button id="closeSettings" class="button tertiary" type="button">
-          Close
-        </button>
+        <button id="closeSettings" class="button tertiary" type="button">Close</button>
       </div>
+
       <div class="settings-panel__content">
         <section class="settings-section" data-settings-section="mode">
           <button class="settings-section__toggle" type="button" aria-expanded="false">
-            <span class="settings-section__title">Reading mode</span>
+            <span class="settings-section__title" data-i18n="ui.titles.readingMode">Reading mode</span>
             <span class="settings-section__chevron" aria-hidden="true"></span>
           </button>
           <div class="settings-section__body" aria-hidden="true" hidden>
             <div class="settings-section__body-inner">
-              <p class="settings-hint">
+              <p class="settings-hint" data-i18n="ui.hints.readingMode">
                 Switch between single-page navigation and vertical scrolling.
               </p>
               <div class="settings-options">
                 <label class="settings-option">
                   <input type="radio" name="mode" value="single" checked />
-                  <span>Page by page</span>
+                  <span data-i18n="ui.options.pageByPage">Page by page</span>
                 </label>
                 <label class="settings-option">
                   <input type="radio" name="mode" value="vertical" />
-                  <span>Vertical scroll</span>
+                  <span data-i18n="ui.options.verticalScroll">Vertical scroll</span>
                 </label>
               </div>
             </div>
           </div>
         </section>
+
+        <section class="settings-section" data-settings-section="language">
+          <button class="settings-section__toggle" type="button" aria-expanded="false">
+            <span class="settings-section__title" data-i18n="ui.titles.language">Language</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </button>
+          <div class="settings-section__body" aria-hidden="true" hidden>
+            <div class="settings-section__body-inner">
+              <p class="settings-hint" data-i18n="ui.hints.language">
+                Choose the interface language for menus and labels.
+              </p>
+              <div class="settings-options">
+                <label class="settings-option">
+                  <input type="radio" name="language" value="en" checked />
+                  <span data-i18n="ui.options.languageEnglish">English</span>
+                </label>
+                <label class="settings-option">
+                  <input type="radio" name="language" value="th" />
+                  <span data-i18n="ui.options.languageThai">ไทย</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section
           class="settings-section settings-section--sub hidden-section"
           data-settings-section="vertical-spacing"
@@ -124,19 +152,21 @@
           hidden
         >
           <button class="settings-section__toggle" type="button" aria-expanded="false">
-            <span class="settings-section__title">Vertical layout</span>
+            <span class="settings-section__title" data-i18n="ui.titles.verticalLayout">Vertical layout</span>
             <span class="settings-section__chevron" aria-hidden="true"></span>
           </button>
           <div class="settings-section__body" aria-hidden="true" hidden>
             <div class="settings-section__body-inner">
-              <p class="settings-hint">
+              <p class="settings-hint" data-i18n="ui.hints.verticalLayout">
                 Control spacing between pages while reading in vertical scroll mode.
               </p>
               <label class="settings-option">
                 <input type="checkbox" id="verticalSpacingToggle" checked />
                 <span>
-                  <span class="height-option__label">Show spacing &amp; page numbers</span>
-                  <span class="height-option__hint">
+                  <span class="height-option__label" data-i18n="ui.options.showSpacing">
+                    Show spacing &amp; page numbers
+                  </span>
+                  <span class="height-option__hint" data-i18n="ui.hints.showSpacing">
                     Leave breathing room between pages and keep the page indicators visible.
                   </span>
                 </span>
@@ -144,63 +174,31 @@
             </div>
           </div>
         </section>
+
         <section class="settings-section" data-settings-section="theme">
           <button class="settings-section__toggle" type="button" aria-expanded="false">
-            <span class="settings-section__title">Theme</span>
+            <span class="settings-section__title" data-i18n="ui.titles.theme">Theme</span>
             <span class="settings-section__chevron" aria-hidden="true"></span>
           </button>
           <div class="settings-section__body" aria-hidden="true" hidden>
             <div class="settings-section__body-inner">
-              <p class="settings-hint">
+              <p class="settings-hint" data-i18n="ui.hints.theme">
                 Pick a theme to match your environment.
               </p>
               <div class="settings-options">
                 <label class="settings-option">
                   <input type="radio" name="theme" value="dark" checked />
-                  <span>Dark</span>
+                  <span data-i18n="ui.options.themeDark">Dark</span>
                 </label>
                 <label class="settings-option">
                   <input type="radio" name="theme" value="light" />
-                  <span>Light</span>
+                  <span data-i18n="ui.options.themeLight">Light</span>
                 </label>
               </div>
             </div>
           </div>
         </section>
-        <section class="settings-section" data-settings-section="height">
-          <button class="settings-section__toggle" type="button" aria-expanded="false">
-            <span class="settings-section__title">Viewer height</span>
-            <span class="settings-section__chevron" aria-hidden="true"></span>
-          </button>
-          <div class="settings-section__body" aria-hidden="true" hidden>
-            <div class="settings-section__body-inner height-options">
-              <p class="settings-hint">
-                Choose whether the reader should stretch to the viewport or use your own height.
-              </p>
-              <label class="settings-option height-option">
-                <input type="checkbox" id="fitToScreenToggle" checked />
-                <span>
-                  <span class="height-option__label">Match screen height (Fixed)</span>
-                  <span class="height-option__hint">
-                    Keeps the reading area sized to your current window height.
-                  </span>
-                </span>
-              </label>
-              <div class="custom-height">
-                <label for="heightRange">
-                  <span class="height-option__label">Custom</span>
-                  <span class="height-option__hint">
-                    Adjust the maximum viewer height (50% – 150% of viewport).
-                  </span>
-                </label>
-                <div class="custom-height__control">
-                  <input type="range" id="heightRange" min="50" max="150" value="100" />
-                  <span id="heightValue" class="custom-height__value">100%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+
         <section class="settings-section settings-section--static coming-soon">
           <div class="settings-section__static">
             <h3>More options soon</h3>
@@ -211,6 +209,7 @@
         </section>
       </div>
     </aside>
+
     <script src="./app.js" defer></script>
   </body>
 </html>
