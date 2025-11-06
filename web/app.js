@@ -12,6 +12,7 @@ const state = {
   heightMode: "fit",
   customHeight: 100,
   showVerticalSpacing: true,
+  language: "en",
 };
 
 const viewer = document.getElementById("viewer");
@@ -31,6 +32,7 @@ const settingsOverlay = document.getElementById("settingsOverlay");
 const closeSettingsButton = document.getElementById("closeSettings");
 const modeRadios = [...document.querySelectorAll('input[name="mode"]')];
 const themeRadios = [...document.querySelectorAll('input[name="theme"]')];
+const languageRadios = [...document.querySelectorAll('input[name="language"]')];
 const fitToggle = document.getElementById("fitToScreenToggle");
 const heightRange = document.getElementById("heightRange");
 const heightValueLabel = document.getElementById("heightValue");
@@ -45,6 +47,7 @@ const sectionToggles = settingsSections
 const THEME_STORAGE_KEY = "mangaReader.theme";
 const HEIGHT_MODE_KEY = "mangaReader.heightMode";
 const HEIGHT_VALUE_KEY = "mangaReader.customHeight";
+const LANGUAGE_STORAGE_KEY = "mangaReader.language";
 const VIEWER_BOTTOM_GAP = 32;
 const MIN_VIEWER_HEIGHT = 320;
 
@@ -89,6 +92,66 @@ function applyTheme(theme, persist = true) {
     }
   }
   refreshSettingsOptions();
+}
+
+const translations = {
+  en: {
+    loadPanelText: "Drop files or folders here",
+    selectFiles: "Select files (PDF / CBZ / images)",
+    loadFolder: "Load folder of images",
+    readyStatus: "Ready to load files.",
+  },
+  th: {
+    loadPanelText: "ลากและวางไฟล์หรือโฟลเดอร์ที่นี่",
+    selectFiles: "เลือกไฟล์ (PDF / CBZ / รูปภาพ)",
+    loadFolder: "โหลดโฟลเดอร์รูปภาพ",
+    readyStatus: "พร้อมสำหรับการโหลดไฟล์",
+  },
+};
+
+function applyLanguage(language, persist = true) {
+  const choice = translations[language] ? language : "en";
+  state.language = choice;
+  const copy = translations[choice];
+  const drop = document.getElementById("dropZone");
+  const selectLabel = document.querySelector("label[for='fileInput'] span");
+  const folderLabel = document.querySelector("label[for='dirInput'] span");
+  const statusEl = document.getElementById("status");
+  if (drop) {
+    drop.textContent = copy.loadPanelText;
+  }
+  if (selectLabel) {
+    selectLabel.textContent = copy.selectFiles;
+  }
+  if (folderLabel) {
+    folderLabel.textContent = copy.loadFolder;
+  }
+  if (statusEl && !statusEl.textContent) {
+    statusEl.textContent = copy.readyStatus;
+  }
+  languageRadios.forEach((radio) => {
+    radio.checked = radio.value === choice;
+  });
+  if (persist) {
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, choice);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+}
+
+function initializeLanguage() {
+  let saved = "en";
+  try {
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (stored && translations[stored]) {
+      saved = stored;
+    }
+  } catch (_) {
+    saved = "en";
+  }
+  applyLanguage(saved, false);
 }
 
 function initializeTheme() {
@@ -671,6 +734,12 @@ themeRadios.forEach((radio) => {
   });
 });
 
+languageRadios.forEach((radio) => {
+  radio.addEventListener("change", (event) => {
+    applyLanguage(event.target.value);
+  });
+});
+
 if (fitToggle) {
   fitToggle.addEventListener("change", (event) => {
     setHeightMode(event.target.checked ? "fit" : "custom");
@@ -831,6 +900,7 @@ dropZone.addEventListener("keydown", (event) => {
 });
 
 initializeTheme();
+initializeLanguage();
 initializeHeightSettings();
 setStatus("Ready to load files.");
 updatePager();
