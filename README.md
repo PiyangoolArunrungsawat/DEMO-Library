@@ -9,7 +9,7 @@ An experimental manga/comic reader that runs in any modern web browser on deskto
 - **Flexible inputs** – Supports PDF, CBZ/ZIP (with images), and plain image folders (`.jpg/.png/.webp/.gif`).
 - **Multiple reading modes** – Toggle between single-page navigation and continuous vertical scrolling (webtoon-style).
 
-## Getting started 
+## Getting started
 
 1. Open `web/index.html` in a browser (Chrome, Edge, Firefox, Safari). ทุกไลบรารีอยู่ในโปรเจกต์แล้วจึงไม่ต้องต่อเน็ต (ถ้าเปิดผ่าน `file://` ระบบจะปิด worker อัตโนมัติให้ PDF ยังอ่านได้)
 2. Use the buttons or drag-and-drop to load:
