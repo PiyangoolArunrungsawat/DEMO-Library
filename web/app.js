@@ -98,7 +98,7 @@ const translations = {
     next: "Next",
     statusLoading: "Loading files…",
     statusLoadError: "Could not load files.",
-    statusLoaded: "Loaded {{count}} pages.",
+    statusLoaded: "Loaded {{count}} pages from “{{name}}”.",
     statusPdfFallback: "Using built-in PDF viewer fallback.",
     statusRenderError: "Could not render pages.",
     statusDropError: "Could not read dropped items.",
@@ -139,7 +139,7 @@ const translations = {
     next: "ถัดไป",
     statusLoading: "กำลังโหลดไฟล์…",
     statusLoadError: "ไม่สามารถโหลดไฟล์ได้",
-    statusLoaded: "โหลดหน้าสำเร็จ {{count}} หน้า",
+    statusLoaded: "โหลดหน้าสำเร็จ {{count}} หน้า จาก “{{name}}”",
     statusPdfFallback: "ใช้งานตัวอ่าน PDF สำรอง",
     statusRenderError: "ไม่สามารถแสดงหน้าได้",
     statusDropError: "ไม่สามารถอ่านไฟล์ที่ลากมาได้",
@@ -433,7 +433,17 @@ async function handleInputFiles(fileList) {
   }
 
   const totalLoaded = state.pages.length || state.pdfDocument?.numPages || 0;
-  setStatus(formatStatus("statusLoaded", { count: totalLoaded }));
+  const name =
+    files.length === 1
+      ? files[0].webkitRelativePath || files[0].name
+      : (files[0].webkitRelativePath || files[0].name || "").split("/")[0] || "Files";
+
+  setStatus(
+    formatStatus("statusLoaded", {
+      count: totalLoaded,
+      name,
+    })
+  );
   await renderCurrentMode();
 }
 
